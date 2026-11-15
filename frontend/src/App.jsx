@@ -10,6 +10,11 @@ const App = () => {
   const ydoc = useMemo(() => new Y.Doc(), []);
   const yText = useMemo(() => ydoc.getText("monaco"), [ydoc]);
 
+  const [username, setUsername] = useState(()=>{
+    const params = new URLSearchParams(window.location.search);
+    return params.get("username") || "";
+  });
+
   useEffect(() => {
     if (!editor) {
       return;
@@ -33,6 +38,31 @@ const App = () => {
       provider.destroy();
     };
   }, [editor, yText, ydoc]);
+
+
+  const handleJoin = (e) => {
+    e.preventDefault();
+    setUsername(e.target.username.value);
+    window.history.pushState({}, "", `?username=${e.target.username.value}`);
+  }
+
+  if(!username) {
+    return (
+      <main className="w-full h-screen bg-red-500 flex items-center justify-center">
+        <form onSubmit={handleJoin} className="flex flex-col gap-4">
+          <input
+            type="text"
+            placeholder="Enter your username"
+            className="p-2 rounded-lg bg-gray-800 text-white"
+            name="username"
+          />
+          <button type="submit" className="bg-blue-500 text-white p-2 rounded-lg">
+            Join
+          </button>
+        </form>
+      </main>
+    );
+  }
 
   return (
     <main className="w-full h-screen bg-red-500 flex gap-4 p-4">
