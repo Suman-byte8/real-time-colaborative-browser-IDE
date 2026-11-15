@@ -4,7 +4,7 @@ import { Editor } from "@monaco-editor/react";
 import { MonacoBinding } from "y-monaco";
 import { useRef, useMemo } from "react";
 import * as Y from "yjs";
-import { socketIOProvider } from "y-socket.io";
+import { SocketIOProvider } from "y-socket.io";
 
 const App = () => {
   const editorRef = useRef(null);
