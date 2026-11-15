@@ -15,7 +15,12 @@ const App = () => {
     return params.get("username") || "";
   });
 
+  const [users, setUsers] = useState([]);
+
   useEffect(() => {
+
+    console.log("Editor:", editor, "YDoc:", ydoc, "YText:", yText, "Username:", username);
+
     if (!editor) {
       return;
     }
@@ -31,9 +36,32 @@ const App = () => {
       ydoc,
       { autoConnect: true },
     );
+
+    provider.awareness.setLocalStateField("user", {
+      name: username,
+      color: "#" + Math.floor(Math.random() * 16777215).toString(16),
+    });
+
+    const updateUsers = () => {
+      const states = Array.from(provider.awareness.getStates().values());
+      setUsers(states.filter((state) => state.user?.name).map((state) => state.user));
+    };
+    provider.awareness.on("change", updateUsers);
+    updateUsers();
+
+    function handleBeforeUnload() {
+      provider.awareness.setLocalStateField("user", null);
+    }
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    
+    
+
     const binding = new MonacoBinding(yText, model, new Set([editor]), provider.awareness);
 
     return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+      provider.awareness.off("change", updateUsers);
       binding.destroy();
       provider.destroy();
     };
@@ -66,7 +94,20 @@ const App = () => {
 
   return (
     <main className="w-full h-screen bg-red-500 flex gap-4 p-4">
-      <aside className="h-full w-1/4 bg-amber-300 rounded-lg"></aside>
+      <aside className="h-full w-1/4 bg-amber-300 rounded-lg">
+        <h2 className="text-xl font-bold p-4">Users</h2>
+        <ul className="p-4">
+          {users.map((user, index) => (
+            <li key={index} className="flex items-center gap-2 mb-2">
+              <span
+                className="w-4 h-4 rounded-full"
+                style={{ backgroundColor: user.color }}
+              ></span>
+              {user.name}
+            </li>
+          ))}
+        </ul>
+      </aside>
       <section className="h-full w-3/4 bg-emerald-300 rounded-lg overflow-hidden">
         <Editor
           height="100%"
