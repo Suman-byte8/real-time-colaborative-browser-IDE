@@ -1,20 +1,38 @@
-import React from "react";
 import "./App.css";
 import { Editor } from "@monaco-editor/react";
 import { MonacoBinding } from "y-monaco";
-import { useRef, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import * as Y from "yjs";
 import { SocketIOProvider } from "y-socket.io";
 
 const App = () => {
-  const editorRef = useRef(null);
-
+  const [editor, setEditor] = useState(null);
   const ydoc = useMemo(() => new Y.Doc(), []);
-  const yText = useMemo(() => ydoc.getText("text"), [ydoc]);
+  const yText = useMemo(() => ydoc.getText("monaco"), [ydoc]);
 
-  const handleMount = (editor) => {
-    editorRef.cuurent = editor;
-  };
+  useEffect(() => {
+    if (!editor) {
+      return;
+    }
+
+    const model = editor.getModel();
+    if (!model) {
+      throw new Error("The Monaco editor model is unavailable.");
+    }
+
+    const provider = new SocketIOProvider(
+      "http://localhost:3000",
+      "monaco",
+      ydoc,
+      { autoConnect: true },
+    );
+    const binding = new MonacoBinding(yText, model, new Set([editor]), provider.awareness);
+
+    return () => {
+      binding.destroy();
+      provider.destroy();
+    };
+  }, [editor, yText, ydoc]);
 
   return (
     <main className="w-full h-screen bg-red-500 flex gap-4 p-4">
@@ -25,6 +43,7 @@ const App = () => {
           defaultLanguage="javascript"
           defaultValue="// Happy Coding!"
           theme="vs-dark"
+          onMount={setEditor}
         />
       </section>
     </main>
